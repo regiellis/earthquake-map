@@ -27,3 +27,5 @@ bower_modules
 
 #*.js
 #*.css
+
+Manage.egg-info

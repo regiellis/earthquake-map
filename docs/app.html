@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html;charset=utf-8">
+  <title>app.py</title>
+  <link rel="stylesheet" href="pycco.css">
+</head>
+<body>
+<div id="background"></div>
+<div id='container'>
+  <div class='section'>
+    <div class='docs'><h1>app.py</h1></div>
+  </div>
+  <div class='clearall'>
+  <div class='section' id='section-0'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-0'>#</a>
+      </div>
+      <p>!/usr/bin/env python</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-1'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-1'>#</a>
+      </div>
+      <h3><span id="application-:-earthquakes" href="application-:-earthquakes"> Application : Earthquakes </span></h3>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-2'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-2'>#</a>
+      </div>
+      <p>Application login file for for the Earthquakes
+project</p>
+<p>Earthquakes.app</p>
+<p>:author: Regi E. <a href="&#109;&#97;&#105;&#108;&#116;&#111;&#58;&#114;&#101;&#103;&#105;&#64;&#112;&#101;&#114;&#115;&#111;&#110;&#97;&#46;&#105;&#111;">&#114;&#101;&#103;&#105;&#64;&#112;&#101;&#114;&#115;&#111;&#110;&#97;&#46;&#105;&#111;</a>
+:created: 20141123
+:desc: Handles all application logic</p>
+<p>:req: rethinkdb [http://rethinkdb.com]
+:req: tornando [http://www.tornadoweb.org/en/stable/]</p>
+<p>Check requirements for all needed cheeseshop installs</p>
+<p>Write your code as if the person maintaining it is a
+Homicidal Maniac who knows where you live...</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">rethinkdb</span> <span class="kn">as</span> <span class="nn">r</span>
+
+<span class="kn">from</span> <span class="nn">rethinkdb.errors</span> <span class="kn">import</span> <span class="n">RqlRuntimeError</span><span class="p">,</span> <span class="n">RqlDriverError</span>
+<span class="kn">from</span> <span class="nn">tornado</span> <span class="kn">import</span> <span class="n">httpserver</span><span class="p">,</span> <span class="n">ioloop</span><span class="p">,</span> <span class="n">web</span>
+<span class="kn">from</span> <span class="nn">tornado.escape</span> <span class="kn">import</span> <span class="n">json_encode</span>
+
+<span class="n">connection</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="s">&#39;localhost&#39;</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">28015</span><span class="p">,</span> <span class="n">db</span><span class="o">=</span><span class="s">&#39;earthquakes&#39;</span><span class="p">)</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-3'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-3'>#</a>
+      </div>
+      <p>Create a instance of the application with</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="k">class</span> <span class="nc">create_app</span><span class="p">(</span><span class="n">web</span><span class="o">.</span><span class="n">Application</span><span class="p">):</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-4'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-4'>#</a>
+      </div>
+      <p>settings"""</p>
+<p>def <strong>init</strong>(self):
+    handlers = [
+        (r'/', MapHandler),
+        (r'/quakes', QuakesHandler),
+        (r'/nearest', NearestHandler)
+    ]
+    settings = dict(
+        template_path=os.path.join(os.path.dirname(<strong>file</strong>), "templates"),
+        static_path=os.path.join(os.path.dirname(<strong>file</strong>), "static"),
+        debug=True,
+        autoreload=True,
+        serve_traceback=True
+    )
+    web.Application.<strong>init</strong>(self, handlers, **settings)</p>
+<p>s MapHandler(web.RequestHandler):
+Returns homepage map and list of quakes</p>
+<p>def get(self):
+    self.render('index.html')</p>
+<p>s QuakesHandler(web.RequestHandler):</p>
+<p>Returns a list of quakes from the db near the</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>    <span class="n">users</span> <span class="n">location</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-5'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-5'>#</a>
+      </div>
+      <p>def prepare(self):
+    try:
+        r.connect(**connection)
+    except RqlDriverError, e:
+        print ('{}'.format(e))</p>
+<p>def on_finish(self):
+    r.connect(**connection).close()</p>
+<p>def get(self):
+    results = r.table('quakes').order_by(r.desc(r.row['properties']['mag'])).run(r.connect(**connection))
+    self.write(json_encode(results))</p>
+<p>s NearestHandler(web.RequestHandler):</p>
+<p>Returns the nearest quake based on the</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>    <span class="n">provide</span> <span class="n">location</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-6'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-6'>#</a>
+      </div>
+      <p>def prepare(self):
+    try:
+        r.connect(**connection)
+    except RqlDriverError, e:
+        print ('{}'.format(e))</p>
+<p>def on_finish(self):
+    r.connect(**connection).close()</p>
+<p>def get(self):
+    locations = [float(self.get_argument('latitude')), float(self.get_argument('longitude'))]</p>
+<pre><code>results = r.table('quakes').get_nearest(
+    r.point(locations[0], locations[1]), index='geometry', unit='mi'
+).run(r.connect(**connection))
+self.write(json_encode(results))
+</code></pre>
+<p>_name<strong> == '</strong>main__':
+server = create_app()
+server.listen(8080)
+ioloop.IOLoop.instance().start()</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+</div>
+</body>
