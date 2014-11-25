@@ -6,14 +6,14 @@ This application uses data from the USGS to display earthquakes detected over th
 ![Earthquake Map](/static/earthquake-map.png?raw=true)
 
 Features:
-  * Deploy Intergration: `./manage.py deploy`
+    * Deploy Intergration: `./manage.py deploy`
 
 
 Dependencies
 ------------
-Tornado [http://www.tornadoweb.org/en/stable/]
-Click [http://click.pocoo.org/3/]
-RethinkDB [http://www.rethinkdb.com/]
+    * Tornado [http://www.tornadoweb.org/en/stable/]
+    * Click [http://click.pocoo.org/3/]
+    * RethinkDB [http://www.rethinkdb.com/]
 
 
 Usage
