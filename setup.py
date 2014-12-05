@@ -1,7 +1,6 @@
 # !/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import os
 from setuptools import setup
 
 
@@ -12,7 +11,6 @@ setup(
     name='Manage',
     version='0.1',
     py_modules=['manage'],
-    include_package_data=True,
     install_requires=required,
     entry_points='''
         [console_scripts]
@@ -20,4 +18,3 @@ setup(
         docs_cli=manage:docs_cli
     ''',
 )
-

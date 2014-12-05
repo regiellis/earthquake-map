@@ -1,4 +1,3 @@
-# !/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # === Project Management Task ===
@@ -251,8 +250,9 @@ def import_database_feed(database=None, table=None, **kwargs):
 
     # Import the earthquake feed data
     r.db(database).table(table).insert(r.http(feed_url)['features'].
-        merge(lambda quake: {'geometry': r.point(quake['geometry']['coordinates'][0],
-        quake['geometry']['coordinates'][1])})).run(conn)
+                                       merge(lambda quake: {'geometry':
+                                       r.point(quake['geometry']['coordinates'][0],
+                                       quake['geometry']['coordinates'][1])})).run(conn)
 
     # Add a index for the database
     if kwargs['index']:
@@ -275,3 +275,8 @@ def document():
     """
 
     subprocess32.call('pycco -d docs/ manage.py app.py', shell=True)
+
+
+if __name__ == '__main__':
+    rethinkdb_cli()
+    docs_cli()

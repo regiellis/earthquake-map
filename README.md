@@ -9,7 +9,7 @@ This application uses [data from the USGS](http://earthquake.usgs.gov/earthquake
 
 Features
 ------------
-    * Deploy Intergration: `pip install --editable .`
+    * CLI Intergration: `pip install --editable .`
 
 
 Dependencies
@@ -22,12 +22,29 @@ Dependencies
 Usage
 -----
 
-Database Tools:
+Run `python setup install` or `pip install -r requirements.txt`
+To install cli tools, run `pip install -e .`
 
+1. Start RethinkDB
+2. If CLI is installed, run `rethinkdb_cli database earthquakes` then `rethinkdb_cli -db earthquakes create_tables quake`
+3. `rethinkdb_cli import_database_feed -i geometry -g earthquakes quakes`
+4. `python app.py` to start server, navigate to http://localhost:8080/
+5. Profit!
+
+
+Database Tools:
+-----
+
+Run `rethinkdb_cli [cmd]`:
+    * create_tables         Manages table/s based on the provided...
+    * database              Manages database/s based on the provided...
+    * import_database_feed  Imports feed into database and normalize it
 
 Documentation Tools:
+-----
 
-
+Run `docs_cli [cmd]`:
+    *  document  Uses pycco to document the current code base
 
 Known Issues
 ------------
