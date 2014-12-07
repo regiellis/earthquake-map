@@ -30,99 +30,12 @@ import click
 import rethinkdb as r
 from rethinkdb.errors import RqlRuntimeError, RqlDriverError, RqlClientError
 
+from helpers import msg, database_check, table_check
 
-def msg(msg=None, level='info'):
-
-    """
-    Prints a simple color coded message based on provided level
-
-    This function acts a simple syntacal sugar helper for printing
-    messages using the [click] library.
-
-    Args:
-        msg (str): Message String [success, warning, error, info]
-        level (str, optional): indicated level of message, colored
-        coded and displayed in the terminal.
-
-    Returns:
-        object: Will return a click object
-
-
-    Examples:
-        Examples with and without level added
-
-        msg('Your info message here')
-        msg('Your error message here', 'error')
-    """
-
-    levels = dict(success='green', warning='yellow', error='red', info='cyan')
-    return click.echo(click.style('{}'.format(msg), fg=levels[level]))
-
-
-# TODO: Combine into a single function
-def database_check(provided_msg=None, **kwargs):
-
-    """
-    Simple sanity check helper for databases
-
-    This function acts a simple syntacal sugar helper for checking
-    if a database exist
-
-    Args:
-        provided_msg (str): Message String
-        kwargs (str, optional): [conn, database]
-
-    Returns:
-        Nothing
-
-    Examples:
-        database_check(conn=conn)
-    """
-
-    if not provided_msg:
-        result_msg = 'Provided a database[s] name to create or drop [-d] ...'
-
-    conn = kwargs['conn']
-
-    msg(result_msg)
-    msg('Current Databases -> {}'.format(r.db_list().run(conn)))
-    conn.close()
-    sys.exit(1)
-
-
-def table_check(provided_msg=None, **kwargs):
-
-    """
-    Simple sanity check helper for tables
-
-    This function acts a simple syntacal sugar helper for checking
-    if a table exist
-
-    Args:
-        provided_msg (str): Message String
-        kwargs (str, optional): [conn, database]
-
-    Returns:
-        Nothing
-
-    Examples:
-        table_check(conn=conn,database=database)
-    """
-
-    if not provided_msg:
-        result_msg = 'You need to provided table[s] ...'
-
-    conn = kwargs['conn']
-    database = kwargs['database']
-
-    msg(result_msg, 'error')
-    msg('Current tables in {} -> {}'.format(database, r.db(database).table_list().run(conn)))
-    conn.close()
-    sys.exit(1)
 
 # === RethinkDB Management Tasks ===
 
-feed_url = 'http://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_month.geojson'
+feed_url = 'http://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.geojson'
 
 
 @click.group()
@@ -168,7 +81,7 @@ def database(database=None, **kwargs):
             msg('Current Databases -> {}'.format(r.db_list().run(conn)))
 
         conn.close()
-    except (RqlClientError, RqlRuntimeError, RqlDriverError), e:
+    except (RqlClientError, RqlRuntimeError, RqlDriverError) as e:
         msg('Problem creating the database[s] -> {}'.format(e), 'error')
         sys.exit(1)
 
@@ -200,7 +113,7 @@ def create_tables(tables=None, **kwargs):
             msg('All tables dropped ...', 'success')
             conn.close()
             sys.exit()
-        except (RqlClientError, RqlRuntimeError, RqlDriverError), e:
+        except (RqlClientError, RqlRuntimeError, RqlDriverError) as e:
             msg('Something went wrong -> {}'.format(e), 'error')
             sys.exit()
 
@@ -223,7 +136,7 @@ def create_tables(tables=None, **kwargs):
             msg('Current Table[s] -> {}'.format(r.db(database).table_list().run(conn)))
 
         conn.close()
-    except (RqlClientError, RqlRuntimeError, RqlDriverError), e:
+    except (RqlClientError, RqlRuntimeError, RqlDriverError) as e:
         msg('Problem creating the Table[s] -> {}'.format(e), 'error')
         sys.exit()
 

@@ -62,7 +62,7 @@ app.controller("MainController", [
     $scope.updateUserLocation = function() {
       navigator.geolocation.getCurrentPosition(function(position) {
         $scope.userLocation = position.coords;
-
+        console.log($scope.userLocation)
         $http.get("/nearest", {params: position.coords})
           .success(function(output) {
             if (!output.length) return;

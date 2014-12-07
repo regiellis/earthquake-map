@@ -40,9 +40,9 @@ class create_app(web.Application):
     """Create application instance with the following
     settings and handler
 
-    :handler: = / MapHandler
-                /quakes QuakesHandler, returns json
-                /nearest NearestHandler returns json
+    :handler: = /        MapHandler
+                /quakes  QuakesHandler, returns json
+                /nearest NearestHandler, returns json
 
     """
 
