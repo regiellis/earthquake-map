@@ -30,158 +30,138 @@ import click
 import rethinkdb as r
 from rethinkdb.errors import RqlRuntimeError, RqlDriverError, RqlClientError
 
-from helpers import msg, database_check, table_check
+from settings import FEED_URL, msg
 
 
 # === RethinkDB Management Tasks ===
 
-feed_url = 'http://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.geojson'
-
-
 @click.group()
-def rethinkdb_cli():
+def manage():
 
     """
-    Simple sanity check before running any commands
+    Simple CLI tools for managing the database interactions
+    within the project
     """
+
     try:
         r.connect('localhost', 28015).close()
-        msg('Databases connection established')
-    except RqlDriverError, e:
-        msg('Database problem -> {}'.format(e), 'error')
+        msg('Databases connection established...')
+    except RqlDriverError as e:
+        msg('Database connection problem -> {}'.format(e), 'error')
         sys.exit(1)
 
 
-@rethinkdb_cli.command()
+@manage.command()
 @click.argument('database', nargs=-1)
-@click.option('--drop', '-d', is_flag=True, help="Drop database[s]")
-@click.option('--list', '-l', is_flag=True, help="List database[s]")
+@click.option('--create', '-c', is_flag=True, help='Creates Database[s]')
+@click.option('--drop', '-d', is_flag=True, help='Drops Database[s]')
+@click.option('--list', '-l', is_flag=True, help="List Database[s]")
 def database(database=None, **kwargs):
 
-    """Manages database/s based on the provided name[s]
-    and options passed.
+    """Options for creating/managing databases
     """
 
     conn = r.connect('localhost', 28015)
 
-    if not database:
-        database_check(conn=conn)
+    if not kwargs['create'] and not kwargs['drop'] and not kwargs['list']:
+        msg('You must provided at least one database option [-c, -d, -l]', 'error')
+        sys.exit(1)
+
+    if not database and not kwargs['list']:
+        msg('You need to provided database[s] name', 'error')
+        sys.exit(1)
 
     try:
         for entry in database:
+            r.db_create(entry).run(conn) if kwargs['create'] else None
+            r.db_drop(entry).run(conn) if kwargs['drop'] else None
 
-            if kwargs['drop']:
-                r.db_drop(entry).run(conn)
-                msg('Database[s] {} dropped ...'.format(entry), 'success')
-            else:
-                r.db_create(entry).run(conn)
-                msg('Database[s] {} created ...'.format(entry), 'success')
+        if not kwargs['list']:
+            msg('Database[s] operation succeed...', 'success')
 
         if kwargs['list']:
             msg('Current Databases -> {}'.format(r.db_list().run(conn)))
 
         conn.close()
-    except (RqlClientError, RqlRuntimeError, RqlDriverError) as e:
-        msg('Problem creating the database[s] -> {}'.format(e), 'error')
-        sys.exit(1)
+
+    except (RqlRuntimeError, RqlDriverError, RqlClientError) as e:
+        msg('Database operation issue -> {}'.format(e), 'error')
 
 
-@rethinkdb_cli.command()
-@click.argument('tables', nargs=-1)
-@click.option('--database', '-db', help="Database to added tables")
-@click.option('--drop', '-d', is_flag=True, help="Drop table[s]")
-@click.option('--list', '-l', is_flag=True, help="List table[s]")
-@click.option('--all', '-a', is_flag=True, help="Will drop all tables in selected database")
-def create_tables(tables=None, **kwargs):
+@manage.command()
+@click.argument('database', nargs=1)
+@click.argument('table', nargs=-1)
+@click.option('--create', '-c', is_flag=True, help='Creates Table[s]')
+@click.option('--drop', '-d', is_flag=True, help='Drops Table[s]')
+@click.option('--list', '-l', is_flag=True, help="List Table[s]")
+@click.option('--index', '-i', help="[database] [table] -i [index]")
+@click.option('--geo', '-g', is_flag=True, help="Make index geospaital")
+def table(database=None, table=None, **kwargs):
 
-    """Manages table/s based on the provided name[s],
-    database and options
+    """Options for creating/managing tables
     """
 
     conn = r.connect('localhost', 28015)
-    database = kwargs['database']
 
-    if not database:
-        database_check(conn=conn)
+    if not kwargs['create'] and not kwargs['drop'] and not kwargs['list'] \
+            and not kwargs['index']:
 
-    if kwargs['all']:
-        #TODO: Prompt the user to make sure, they are sure
-        try:
-            tables = r.db(database).table_list().run(conn)
-            for table in tables:
-                r.db(database).table_drop(table).run(conn)
-            msg('All tables dropped ...', 'success')
-            conn.close()
-            sys.exit()
-        except (RqlClientError, RqlRuntimeError, RqlDriverError) as e:
-            msg('Something went wrong -> {}'.format(e), 'error')
-            sys.exit()
+        msg('You must provided at least one table option [-c, -d, -l]', 'error')
+        sys.exit(1)
 
-    if not tables:
-        table_check(conn=conn, database=database)
+    if not database and not kwargs['list']:
+        msg('You need to provided Database[s] name', 'error')
+        sys.exit(1)
 
-    if kwargs['list']:
-        msg('Current Table[s] -> {}'.format(r.db(database).table_list().run(conn)))
+    if not table and not kwargs['list']:
+        msg('You need to provided table[s] name', 'error')
+        sys.exit(1)
 
     try:
-        for entry in tables:
-            if kwargs['drop']:
-                r.db(database).table_drop(entry).run(conn)
-                msg('Table[s] {} dropped ...'.format(entry), 'success')
-            else:
-                r.db(database).table_create(entry).run(conn)
-                msg('Table[s] {} created in {}...'.format(entry, database), 'success')
+        for entry in table:
+            r.db(database).table_create(entry).run(conn) if kwargs['create'] else None
+            r.db(database).table_drop(entry).run(conn) if kwargs['drop'] else None
+
+        if kwargs['index']:
+            r.db(database).table(table[0]).index_create(kwargs['index'], geo=kwargs['geo']).run(conn)
+            msg('Table[s] index added...', 'success')
+
+        if not kwargs['list'] and not kwargs['index']:
+            msg('Table[s] operation succeed...', 'success')
 
         if kwargs['list']:
-            msg('Current Table[s] -> {}'.format(r.db(database).table_list().run(conn)))
+            msg('Current Databases -> {}'.format(r.db(database).table_list().run(conn)))
 
         conn.close()
-    except (RqlClientError, RqlRuntimeError, RqlDriverError) as e:
-        msg('Problem creating the Table[s] -> {}'.format(e), 'error')
-        sys.exit()
+
+    except (RqlRuntimeError, RqlDriverError, RqlClientError) as e:
+        msg('Table operation issue -> {}'.format(e), 'error')
 
 
 # This function is written only to work with this project and is
 # brittle by design
-@rethinkdb_cli.command()
+@manage.command()
 @click.argument('database')
 @click.argument('table')
-@click.option('--index', '-i', help="Creates named index for the database")
-@click.option('--geo', '-g', is_flag=True, help="Create index")
-def import_database_feed(database=None, table=None, **kwargs):
+def import_feed(database=None, table=None):
 
     """Imports feed into database and normalize it
     """
 
     conn = r.connect('localhost', 28015)
 
-    if not database:
-        database_check(conn=conn)
-
-    if not table:
-        table_check(conn=conn, database=database)
-
     # Import the earthquake feed data
-    r.db(database).table(table).insert(r.http(feed_url)['features'].
+    r.db(database).table(table).insert(r.http(FEED_URL)['features'].
                                        merge(lambda quake: {'geometry':
                                        r.point(quake['geometry']['coordinates'][0],
                                        quake['geometry']['coordinates'][1])})).run(conn)
 
-    # Add a index for the database
-    if kwargs['index']:
-        r.db(database).table(table).index_create(kwargs['index'], geo=kwargs['geo']).run(conn)
     conn.close()
 
 
 ### === Generate Documentation ===
 
-
-@click.group()
-def docs_cli():
-    pass
-
-
-@docs_cli.command()
+@manage.command()
 def document():
 
     """Uses pycco to document the current code base
@@ -190,6 +170,14 @@ def document():
     subprocess32.call('pycco -d docs/ manage.py app.py', shell=True)
 
 
+@manage.command()
+def app_server():
+
+    """Start development server
+    """
+
+    subprocess32.call('python app.py', shell=True)
+
+
 if __name__ == '__main__':
-    rethinkdb_cli()
-    docs_cli()
+    manage()

@@ -2,7 +2,7 @@ body {
   font-family: "Open Sans", sans-serif;
 }
 
-#header {
+header {
   position: absolute;
   top: 0; left: 0; right: 0;
   height: 80px;
@@ -11,7 +11,7 @@ body {
   color: white;
 }
 
-#header h1 {
+header h1 {
   text-transform: uppercase;
   letter-spacing: 2px;
   font-weight: 300;
@@ -38,6 +38,7 @@ body {
 .quake {
   padding: 15px;
   border-bottom: 1px solid #DFDFDF;
+  overflow: hidden;
 }
 
 .quake .magnitude {
@@ -49,13 +50,16 @@ body {
 }
 
 .quake .title {
+  float: left;
   color: #8b8b8b;
   margin-bottom: 10px;
 }
 
 .quake .location {
+  float: left;
   color: #a7a7a7;
   font-weight: 300;
+  width: 70%;
 }
 
 .quake .nearest {

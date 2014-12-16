@@ -4,17 +4,19 @@
 from setuptools import setup
 
 
-with open('requirements.txt') as f:
-    required = f.read().splitlines()
-
 setup(
     name='Manage',
     version='0.1',
     py_modules=['manage'],
-    install_requires=required,
+    install_requires=[
+        'click',
+        'Pycco',
+        'rethinkdb',
+        'subprocess32',
+        'tornado'
+        ],
     entry_points='''
         [console_scripts]
-        rethinkdb_cli=manage:rethinkdb_cli
-        docs_cli=manage:docs_cli
+        manage=manage:manage
     ''',
 )

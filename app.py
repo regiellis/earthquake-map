@@ -24,15 +24,31 @@ Homicidal Maniac who knows where you live...
 """
 
 import os
+import sched
+import time
+
 import rethinkdb as r
 
 from rethinkdb.errors import RqlRuntimeError, RqlDriverError
 from tornado import httpserver, ioloop, web
 from tornado.escape import json_encode
 
+from settings import msg
+
 connection = dict(host=os.getenv('RBD_HOST') or 'localhost',
                   port=os.getenv('RDB_PORT') or '28015',
                   db='earthquakes')
+
+
+# scheduler = sched.scheduler(time.time, time.sleep)
+
+
+# def refesh():
+#     print('Ran ...')
+#     scheduler.enter(10, 6, refesh)
+#     scheduler.run()
+
+# refesh()
 
 
 class create_app(web.Application):
@@ -63,6 +79,7 @@ class create_app(web.Application):
 
 
 class MapHandler(web.RequestHandler):
+
     """Returns homepage map and list of quakes in
     json
     """
@@ -76,6 +93,7 @@ class QuakesHandler(web.RequestHandler):
     """Returns a list of quakes from the db near the
     users location in json
     """
+
     def prepare(self):
         try:
             r.connect(**connection)
@@ -86,6 +104,7 @@ class QuakesHandler(web.RequestHandler):
         r.connect(**connection).close()
 
     def get(self):
+        self.set_header('Content-Type', 'application/json')
         results = r.table('quakes').order_by(r.desc(
                                              r.row['properties']['mag'])
                                              ).run(r.connect(**connection))
@@ -107,23 +126,25 @@ class NearestHandler(web.RequestHandler):
     def on_finish(self):
         r.connect(**connection).close()
 
-    def get(self):
+    def post(self):
 
+        self.set_header('Content-Type', 'application/json')
         latitude = float(self.get_argument('latitude'))
         longitude = float(self.get_argument('longitude'))
 
         if not latitude or not longitude:
             self.write(json_encode(dict(err='Invalid Point')))
 
-        locations = [latitude, longitude]
+        location = [latitude, longitude]
 
         results = r.table('quakes').get_nearest(
-            r.point(locations[0], locations[1]), index='geometry', unit='mi'
-        ).run(r.connect(**connection))
+            r.point(location[1], location[0]), index='geometry', unit='mi',
+            max_dist=500).run(r.connect(**connection))
         self.write(json_encode(results))
 
 
 if __name__ == '__main__':
     server = create_app()
     server.listen(8080)
+    msg('Server Started on 8080 ...', 'success')
     ioloop.IOLoop.instance().start()
