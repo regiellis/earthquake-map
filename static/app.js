@@ -3,17 +3,11 @@
  */
 
 
-// // Vuejs Configuration
+// Vuejs Configuration
 Vue.config.prefix = 'data-';
 Vue.config.delimiters = ['[[', ']]'];
 
-
-
 (function(Vue, win, doc, undefined) {
-
-    Vue.component('foobar', {
-        template: "Earthqssuakes"
-    });
 
     // Current Date or Quake Date
 
@@ -30,9 +24,11 @@ Vue.config.delimiters = ['[[', ']]'];
             date: undefined
         },
         created: function() {
-            this.$watch('date', function() {
-                console.log(quakes.__dataFetch);
+            this.$watch('date', function(newVal, oldVal) {
+                if (!newVal) return;
+                quakes.__updateQuakeData(this.$data.date);
             });
+
         },
         computed: {
             currentDate: {
@@ -60,6 +56,7 @@ Vue.config.delimiters = ['[[', ']]'];
             this.__init();
             this.__geolocate();
             // this.$watch('userLocation', function(newVal, oldVal) {
+            //     if (!newVal) return;
             //     this.__geolocate(newVal, oldVal);
             // }, this);
         },
@@ -128,13 +125,11 @@ Vue.config.delimiters = ['[[', ']]'];
     var quakes = new Vue({
 
         el: '#quakes',
-        data: {
-            datIe: null,
-        },
+        data: {},
         created: function _created_quakes() {
             (!!window.Worker) ? this.__dataWorker(this) : this.__dataFetch(this);
-            this.$watch('date', function() {
-                console.log(this.$data)
+            this.$watch('quakes', function() {
+                this.__markerQuakes(this.$data.quakes);
             });
         },
         filters: {
@@ -147,7 +142,7 @@ Vue.config.delimiters = ['[[', ']]'];
             }
         },
         methods: {
-            __dataFetch: function _init_quakes(context) {
+            __dataFetch: function __dataFetch_quakes(context) {
 
                 var _fall_back = function(url, func, undefined) {
                     if (typeof XMLHttpRequest !== undefined) {
@@ -166,30 +161,35 @@ Vue.config.delimiters = ['[[', ']]'];
                     context.$data = { 'quakes': JSON.parse(this.response) };
                 });
             },
-            __dataWorker: function(context) {
+            __dataWorker: function __dataWorker_quakes(context) {
                 var dataWorker = new Worker('/static/data_worker.js');
 
                 dataWorker.postMessage([_url, 'get', {}]);
 
-                dataWorker.onmessage = function __dataWorker_message_qaukes(msg) {
-                    context.$data = { 'quakes': msg.data};
-                    context.__markerQuakes(context.$data.quakes)
+                dataWorker.onmessage = function __dataWorker_message_quakes(msg) {
+                    var quakes = []
+                    for ( item in msg.data) {
+                        quakes.push(msg.data[item]);
+                    }
+                    context.$data = { 'quakes': quakes };
                     console.log('Data recieved from worker');
                 }
             },
-            __selectedQuake: function(coords, quake) {
-                var point = [coords[1], coords[0]];
-                quake.marker = L.circleMarker(point, {
-                    radius: quake.properties.mag * 2,
-                    fillColor: "#ff0000", color: "#616161"
+            __selectedQuake: function(quake) {
+                quake.marker.setStyle({
+                    fillColor: '#ff0000',
+                    color: '#ff0000'
                 });
-                map.addLayer(quake.marker);
-                map.setView(point, 5, {animate: true});
+                map.removeLayer(quake.marker).addLayer(quake.marker);
+                map.setView(quake.point, 5, {animate: true});
             },
             __markerQuakes: function __markerQuakes(quakes) {
                 // TODO: MOVE TO MAP VIEW
+                var markers = new L.FeatureGroup();
+
+                markers.clearLayers();
                 for (var quake in quakes) {
-                    var quake = quakes[quake];
+                    quake = quakes[quake];
                     quake.point = L.latLng(
                       quake.geometry.coordinates[1],
                       quake.geometry.coordinates[0])
@@ -198,8 +198,26 @@ Vue.config.delimiters = ['[[', ']]'];
                         radius: quake.properties.mag * 2,
                         fillColor: "#616161", color: "#616161"
                     });
-                    map.addLayer(quake.marker);
+                    markers.addLayer(quake.marker);
                 }
+                map.addLayer(markers);
+            },
+            __updateQuakeData: function __updateQuakeData(date) {
+                var date = new Date(date).getTime(),
+                    currentDate = new Date().getTime(),
+                    quakes = this.$data.quakes,
+                    newQuakes = []
+
+                // console.log(date, this.$data.quakes);
+                // console.log(currentDate);
+                for (var quake in quakes) {
+                    quake = quakes[quake]
+                    if (quake.properties.time > date && quake.properties.time < currentDate) {
+                        newQuakes.push(quake);
+                    }
+                    this.$data = { 'quakes': newQuakes}
+                }
+
             }
         }
     });

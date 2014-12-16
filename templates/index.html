@@ -20,7 +20,7 @@
     <div id="quakes">
       <div class="quake"
         data-repeat="quake: quakes"
-        data-on="click: __selectedQuake(quake.geometry.coordinates, quake)">
+        data-on="click: __selectedQuake(quake)">
           <div class="magnitude" data-text="quake.properties.mag | formatMagnitude"></div>
           <div class="title">Earthquake on [[ quake.properties.time | formatDate 'MM' ]]</div>
           <div class="location" data-text="quake.properties.place"></div>
