@@ -20,26 +20,16 @@ Homicidal Maniac who knows where you live...
 
 """
 
-import click
+import os
+
+import modules
 
 FEED_URL = 'http://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_month.geojson'
-
-
-def msg(msg=None, level='info'):
-
-    """
-    Prints a simple color coded message based on provided level
-
-    This function acts a simple syntacal sugar helper for printing
-    messages using the [click] library.
-
-    Examples:
-        Examples with and without level added
-
-        msg('Your info message here')
-        msg('Your error message here', 'error')
-    """
-
-    levels = dict(success='green', warning='yellow', error='red', info='cyan')
-    return click.echo(click.style('{}'.format(msg), fg=levels[level]))
-
+CONNECTION = dict(host=os.getenv('RBD_HOST') or 'localhost', port=os.getenv('RDB_PORT') or '28015',
+                  db=os.getenv('RBD_DB') or 'earthquakes')
+APP_SETTINGS = dict(template_path=os.path.join(os.path.dirname(__file__), "templates"),
+                    static_path=os.path.join(os.path.dirname(__file__), "static"),
+                    ui_modules=modules,
+                    debug=True,
+                    autoreload=True,
+                    serve_traceback=True)

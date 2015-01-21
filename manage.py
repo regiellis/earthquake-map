@@ -1,17 +1,15 @@
 # -*- coding: utf-8 -*-
 
-# === Project Management Task ===
-
 """
-The manage.py file relies on the click library for
-some quick setup managment tasks via cli
+The manage.py file relies on the click library for some quick
+setup managment tasks via cli
 
 Earthquakes.manage
 
 :author: Regi E. <regi@persona.io>
 :created: 20141123
-:desc: Manages shortcuts for initial development and database
-       tasks and tools in a simple interface
+:desc: Manages shortcuts for initial development and database tasks and
+       tools in a simple interface
 
 :req: rethinkdb [http://rethinkdb.com]
 :req: click [http://click.pocoo.org/3/]
@@ -24,13 +22,14 @@ Homicidal Maniac who knows where you live...
 """
 
 import sys
-import subprocess32
+import subprocess
 
 import click
 import rethinkdb as r
 from rethinkdb.errors import RqlRuntimeError, RqlDriverError, RqlClientError
 
-from settings import FEED_URL, msg
+from settings import FEED_URL
+from helpers import msg
 
 
 # === RethinkDB Management Tasks ===
@@ -167,7 +166,7 @@ def document():
     """Uses pycco to document the current code base
     """
 
-    subprocess32.call('pycco -d docs/ manage.py app.py', shell=True)
+    subprocess.call('pycco -d docs/ manage.py app.py', shell=True)
 
 
 @manage.command()
@@ -176,7 +175,7 @@ def app_server():
     """Start development server
     """
 
-    subprocess32.call('python app.py', shell=True)
+    subprocess.call('python app.py', shell=True)
 
 
 if __name__ == '__main__':

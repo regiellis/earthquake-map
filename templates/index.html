@@ -3,33 +3,28 @@
   <head>
     <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Open+Sans:300,400,600">
     <link rel="stylesheet" href="//cdn.leafletjs.com/leaflet-0.7.3/leaflet.css">
-    <link rel="stylesheet" href="/static/main.css">
+    <link rel="stylesheet" href="/static/styles/main.css">
 
     <script type="text/javascript" src="//cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
-    <script type="text/javascript" src="/static/vue.min.js"></script>
-
+    <script type="text/javascript" src="static/scripts/EventEmitter.js"></script>
+    <script type="text/javascript" src="static/scripts/lodash.min.js"></script>
 
   </head>
-  <body>
+  <body class="quake-app">
 
     <header>
-      <input id="date" type="date" data-model='date'>
-      <h1>Earthquakes &mdash; <span class="explain" data-text="currentDate">No Date Provided</span></h1>
+      <input id="date" type="date">
+      <h1>Earthquakes &mdash; <span class="explain">{{ page_vars['current_date'] }}</span></h1>
     </header>
 
     <div id="quakes">
-      <div class="quake"
-        data-repeat="quake: quakes"
-        data-on="click: __selectedQuake(quake)">
-          <div class="magnitude" data-text="quake.properties.mag | formatMagnitude"></div>
-          <div class="title">Earthquake on [[ quake.properties.time | formatDate 'MM' ]]</div>
-          <div class="location" data-text="quake.properties.place"></div>
-<!--           <div class="nearest" data-if="quakes.$dat == quake.id">Distance from you: <b>[[ nearestDistance | number: 2 ]]</b> miles</div>
- -->      </div>
+    {% for quake in page_vars['quakes']  %}
+      {% module Quake(quake) %}
+    {% end %}
     </div>
 
-    <div id="map"></div>
+    <div id="map"><span>Rendering Map...</span></div>
 
   </body>
-    <script type="text/javascript" src="/static/app.js"></script>
+    <script type="text/javascript" src="/static/scripts/app.js"></script>
 </html>

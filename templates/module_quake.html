@@ -1,0 +1,8 @@
+<div class="quake" data-quake="{{ quake['id'] }}" data-time="{{ quake['properties']['time'] }}" data-position="{{ quake['geometry']['coordinates'] }}">
+    <div class="magnitude">{{ "{:.1f}".format(quake['properties']['mag']) }}</div>
+    <div class="title">Earthquake on {{ datetime.date.fromtimestamp(quake['properties']['time']/1000.0).strftime('%B %d, %Y') }}</div>
+    <div class="location">{{ quake['properties']['place'] }}</div>
+    {% if quake['id'] == "usc000t4cz" %}
+        <div class="nearest">Distance from you: <b></b> miles</div>
+    {% end %}
+</div>

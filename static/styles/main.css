@@ -22,6 +22,20 @@ header h1 {
   position: absolute;
   top: 80px; bottom: 0; right: 0;
   left: 351px;
+  background: #F4F4F4;
+  text-align: center;
+}
+
+#map span {
+  display: inline-block;
+  color: #fff;
+  background: #8b8b8b;
+  width: 12%;
+  text-align: center;
+  text-transform: uppercase;
+  margin: 15% auto;
+  padding: 10px 5px;
+  border-radius: 5px;
 }
 
 #quakes {
@@ -66,6 +80,7 @@ header h1 {
   color: #d15543;
   font-weight: 300;
   margin-top: 10px;
+  float: right;
 }
 
 .selected {

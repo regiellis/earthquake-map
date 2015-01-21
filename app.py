@@ -25,30 +25,32 @@ Homicidal Maniac who knows where you live...
 
 import os
 import sched
+import datetime
 import time
 
 import rethinkdb as r
 
 from rethinkdb.errors import RqlRuntimeError, RqlDriverError
-from tornado import httpserver, ioloop, web
+from tornado import httpserver, ioloop, web, gen
+from tornado.httpclient import AsyncHTTPClient
 from tornado.escape import json_encode
 
-from settings import msg
 
-connection = dict(host=os.getenv('RBD_HOST') or 'localhost',
-                  port=os.getenv('RDB_PORT') or '28015',
-                  db='earthquakes')
+from settings import CONNECTION, APP_SETTINGS
+from helpers import msg
 
 
-# scheduler = sched.scheduler(time.time, time.sleep)
+def database_connect(connection=None):
 
+    """Does a quick connection to the database, with error
+    message"""
 
-# def refesh():
-#     print('Ran ...')
-#     scheduler.enter(10, 6, refesh)
-#     scheduler.run()
+    try:
+        r.connect(**CONNECTION)
+    except RqlDriverError as e:
+        msg('{}'.format(e), 'error')
 
-# refesh()
+    return None
 
 
 class create_app(web.Application):
@@ -68,78 +70,73 @@ class create_app(web.Application):
             (r'/quakes', QuakesHandler),
             (r'/nearest', NearestHandler)
         ]
-        settings = dict(
-            template_path=os.path.join(os.path.dirname(__file__), "templates"),
-            static_path=os.path.join(os.path.dirname(__file__), "static"),
-            debug=True,
-            autoreload=True,
-            serve_traceback=True
-        )
-        web.Application.__init__(self, handlers, **settings)
+        web.Application.__init__(self, handlers, **APP_SETTINGS)
 
 
-class MapHandler(web.RequestHandler):
+class BaseHandler(web.RequestHandler):
+
+    def prepare(self):
+        database_connect(CONNECTION)
+        self.conn = r.connect(**CONNECTION)
+
+    def on_finish(self):
+        self.conn.close()
+
+
+class MapHandler(BaseHandler):
 
     """Returns homepage map and list of quakes in
     json
     """
-
     def get(self):
-        self.render('index.html')
+        current_date = datetime.date.today().strftime('%B %d, %Y')
+        quakes = r.table('quakes') \
+            .pluck('id', {'properties': ['mag', 'time', 'place']}, {'geometry': ['coordinates']}) \
+            .order_by(r.desc(r.row['properties']['mag'])).run(self.conn)
+
+        page_vars = dict(
+            current_date=current_date,
+            quakes=quakes
+        )
+        self.render('index.html', page_vars=page_vars)
 
 
-class QuakesHandler(web.RequestHandler):
+class QuakesHandler(BaseHandler):
 
     """Returns a list of quakes from the db near the
     users location in json
     """
 
-    def prepare(self):
-        try:
-            r.connect(**connection)
-        except RqlDriverError, e:
-            print ('{}'.format(e))
-
-    def on_finish(self):
-        r.connect(**connection).close()
-
     def get(self):
+        results = r.table('quakes') \
+            .pluck('id', {'properties': ['mag', 'time', 'place']}, {'geometry': ['coordinates']}) \
+            .order_by(r.desc(r.row['properties']['mag'])).run(self.conn)
         self.set_header('Content-Type', 'application/json')
-        results = r.table('quakes').order_by(r.desc(
-                                             r.row['properties']['mag'])
-                                             ).run(r.connect(**connection))
         self.write(json_encode(results))
 
 
-class NearestHandler(web.RequestHandler):
+class NearestHandler(BaseHandler):
 
     """Returns the nearest quake based on the
     users location in json
     """
 
-    def prepare(self):
-        try:
-            r.connect(**connection)
-        except RqlDriverError, e:
-            print ('{}'.format(e))
-
-    def on_finish(self):
-        r.connect(**connection).close()
-
     def post(self):
 
-        self.set_header('Content-Type', 'application/json')
-        latitude = float(self.get_argument('latitude'))
-        longitude = float(self.get_argument('longitude'))
-
-        if not latitude or not longitude:
-            self.write(json_encode(dict(err='Invalid Point')))
+        try:
+            latitude = float(self.get_argument('latitude'), 'Invalid Point')
+            longitude = float(self.get_argument('longitude'), 'Invalid Point')
+        except ValueError:
+            message = 'Invalid Point'
+            self.send_error(400, message=message)
 
         location = [latitude, longitude]
 
         results = r.table('quakes').get_nearest(
             r.point(location[1], location[0]), index='geometry', unit='mi',
-            max_dist=500).run(r.connect(**connection))
+            max_dist=500).run(self.conn)
+
+        self.set_header('Content-Type', 'application/json')
         self.write(json_encode(results))
 
 
